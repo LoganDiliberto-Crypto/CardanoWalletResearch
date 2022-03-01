@@ -25,7 +25,10 @@ const start = async () => {
     wallet_obj.Wallets.push({
       Name: wallets[i].name,
       WalletID: wallets[i].id,
-      Balance: wallets[i].balance.available,
+      Balance: {
+        available: lovelaceToAda(wallets[i].balance.available.quantity),
+        unit: "ADA",
+      },
       Status: wallets[i].state,
       Tip: wallets[i].tip,
     });
@@ -36,7 +39,6 @@ const start = async () => {
     output: process.stdout,
   });
 
-  let mnemonic;
   // requirements... passphrase, mnemonic, or name. If user doesnt have a mnemonic, generate one for them.
   rl.question(
     "\nWould you like to create or restore a new wallet? (y/n)\n>",
@@ -61,7 +63,6 @@ const start = async () => {
 
         console.log("\nNew Wallet created:", name + "\n");
         start();
-        
       } else if (a == "n") {
         let senderWallet;
         let current_wallet = readlinesync.question(
@@ -70,7 +71,7 @@ const start = async () => {
         wallets.forEach(async (wallet, index) => {
           if (wallet.name == current_wallet) {
             senderWallet = wallet;
-            // senderWallet = await walletServer.getShelleyWallet("1dc8a77b3d1a36d516c0d3c5e21038e4d5afda17");
+
             console.log("\n" + wallet.name + ":", wallet_obj.Wallets[index]);
           }
         });
@@ -88,40 +89,98 @@ const start = async () => {
           "How much ADA would you like to send?\n> "
         );
 
-        let passphrase = readlinesync.question("Enter passphrase:\n> ", {
-          hideEchoBack: true,
-        });
+        console.log();
 
-        // only for external
-        // let signer = readlinesync.question("Enter mnemonic phrase\n> ");
+        /////////////////////////////////
+        // ONLINE TRANSACTION
 
-        sendTransaction(
+        // let passphrase = readlinesync.question("Enter passphrase:\n> ", {
+        //   hideEchoBack: true,
+        // });
+
+        // sendTransaction(
+        //   senderWallet,
+        //   [new AddressWallet(address)],
+        //   [amount * 1000000],
+        //   passphrase
+        // );
+        /////////////////////////////////
+
+        // OFFLINE TRANSACTION
+        let mnemonic = readlinesync.question("Enter mnemonic phrase\n> ");
+
+        sendExternalTransaction(
           senderWallet,
-          [new AddressWallet(address)],
+          address,
           [amount * 1000000],
-          passphrase
+          mnemonic
         );
       }
     }
   );
 };
 
+const lovelaceToAda = (value) => {
+  return value / 1_000_000;
+};
+
+//online tx
 const sendTransaction = async (wallet, address, amount, passphrase) => {
   console.log("HERE", wallet);
   // let estimatedFees = await wallet.estimateFee(address, amount);
   let transaction = await wallet.sendPayment(passphrase, address, amount);
   console.log(
-    "Sent! View in blockstream: https://testnet.cardanoscan.io/transaction/" +
+    "Sent! View in Cardanoscan: https://testnet.cardanoscan.io/transaction/" +
       transaction.id
   );
 };
 
-//TODO...ignore for now
-// const sendExternalTransaction = async (address, amount, signers) => {
-//   let config = Config.Testnet;
-//   let info = await walletServer.getNetworkInformation();
-//   let ttl = info.node_tip.absolute_slot_number * 12000;
-// };
+//offline tx
+const sendExternalTransaction = async (
+  wallet,
+  receivingAddress,
+  amount,
+  mnemonic
+) => {
+  let info = await walletServer.getNetworkInformation();
+  let ttl = info.node_tip.absolute_slot_number * 12000;
+  let address = (await wallet.getUnusedAddresses()).slice(0, 1);
+
+  //optional metadata
+  let data = { 0: "this is a test transaction." };
+
+  //define inputs and outputs
+  let coinSelection = await wallet.getCoinSelection(address, amount, data);
+  coinSelection = JSON.parse(JSON.stringify(coinSelection));
+  coinSelection.outputs[0].address = receivingAddress;
+
+  //define root and priv
+  let rootKey = Seed.deriveRootKey(mnemonic);
+  let signingKeys = coinSelection.inputs.map((input) => {
+    let privateKey = Seed.deriveKey(
+      rootKey,
+      input.derivation_path
+    ).to_raw_key();
+    return privateKey;
+  });
+
+  //build and sign tx
+  let metadata = Seed.buildTransactionMetadata(data);
+  let builtTX = Seed.buildTransaction(coinSelection, ttl, {
+    metadata: metadata,
+  });
+  let txBody = Seed.sign(builtTX, signingKeys, metadata);
+
+  let signed = Buffer.from(txBody.to_bytes()).toString("hex");
+  console.log("TRANSACTION SIGNED (AS HEX)", txBody);
+
+  let txId = await walletServer.submitTx(signed);
+  console.log(
+    "\n",
+    "Sent! View in Cardanoscan: https://testnet.cardanoscan.io/transaction/" +
+      txId
+  );
+};
 
 const createOrRestoreWallet = async (name, mnemonic, passphrase) => {
   try {
@@ -137,17 +196,15 @@ const createOrRestoreWallet = async (name, mnemonic, passphrase) => {
   }
 };
 
-//Check Synching state of Wallet Server
+//Check synching state of Wallet Server
 const checkWalletStatus = async () => {
   let info = await walletServer.getNetworkInformation();
   console.log("Wallet Server Status:", info.sync_progress);
 };
 
-//generate 24 word mnemonic (Shelley)
+//generate 24 word mnemonic (shelley)
 const genMnemonic = () => {
   let recoveryPhrase = Seed.generateRecoveryPhrase(24);
-  // as arr
-  // let recoveryPhraseArr = Seed.toMnemonicList(recoveryPhrase);
   return recoveryPhrase;
 };
 
