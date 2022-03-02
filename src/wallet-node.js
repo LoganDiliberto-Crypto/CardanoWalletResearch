@@ -4,22 +4,28 @@ const {
   WalletServer,
   AddressWallet,
 } = require("cardano-wallet-js");
+
 const fs = require("fs");
 const readline = require("readline");
 const readlinesync = require("readline-sync");
 const assert = require("assert");
-const bip39 = require("bip39");
 
-let walletServer = WalletServer.init("http://localhost:8081/v2");
+
+const walletServer = WalletServer.init("http://localhost:8081/v2");
 
 const start = async () => {
+  //define wallets obj
   let wallet_obj = { Wallets: [] };
-  //check status
-  await checkWalletStatus();
 
+  //check status
+  console.log(
+    "Wallet Server Status:",
+    (await checkWalletStatus()).sync_progress
+  );
   let wallets = await walletServer.wallets();
   console.log("\nNumber of Wallets:", wallets.length);
 
+  //print existing wallets
   for (let i = 0; i < wallets.length; i++) {
     console.log("Wallet " + (i + 1) + ":", wallets[i].name);
     wallet_obj.Wallets.push({
@@ -89,7 +95,8 @@ const start = async () => {
           "How much ADA would you like to send?\n> "
         );
 
-        console.log();
+        // OFFLINE TRANSACTION
+        let mnemonic = readlinesync.question("Enter mnemonic phrase\n> ");
 
         /////////////////////////////////
         // ONLINE TRANSACTION
@@ -105,9 +112,6 @@ const start = async () => {
         //   passphrase
         // );
         /////////////////////////////////
-
-        // OFFLINE TRANSACTION
-        let mnemonic = readlinesync.question("Enter mnemonic phrase\n> ");
 
         sendExternalTransaction(
           senderWallet,
@@ -126,8 +130,6 @@ const lovelaceToAda = (value) => {
 
 //online tx
 const sendTransaction = async (wallet, address, amount, passphrase) => {
-  console.log("HERE", wallet);
-  // let estimatedFees = await wallet.estimateFee(address, amount);
   let transaction = await wallet.sendPayment(passphrase, address, amount);
   console.log(
     "Sent! View in Cardanoscan: https://testnet.cardanoscan.io/transaction/" +
@@ -142,7 +144,9 @@ const sendExternalTransaction = async (
   amount,
   mnemonic
 ) => {
-  let info = await walletServer.getNetworkInformation();
+  //required for transaction builder
+  let info = await checkWalletStatus();
+  // time to live, not necessary for single transactions, but due to cardanos consistency, it is required.
   let ttl = info.node_tip.absolute_slot_number * 12000;
   let address = (await wallet.getUnusedAddresses()).slice(0, 1);
 
@@ -172,12 +176,12 @@ const sendExternalTransaction = async (
   let txBody = Seed.sign(builtTX, signingKeys, metadata);
 
   let signed = Buffer.from(txBody.to_bytes()).toString("hex");
-  console.log("TRANSACTION SIGNED (AS HEX)", txBody);
+  console.log("SiGNED TRANSACTION (AS HEX)", txBody);
 
   let txId = await walletServer.submitTx(signed);
   console.log(
-    "\n",
-    "Sent! View in Cardanoscan: https://testnet.cardanoscan.io/transaction/" +
+    "\n" +
+      "Sent! View in Cardanoscan: https://testnet.cardanoscan.io/transaction/" +
       txId
   );
 };
@@ -199,7 +203,7 @@ const createOrRestoreWallet = async (name, mnemonic, passphrase) => {
 //Check synching state of Wallet Server
 const checkWalletStatus = async () => {
   let info = await walletServer.getNetworkInformation();
-  console.log("Wallet Server Status:", info.sync_progress);
+  return info;
 };
 
 //generate 24 word mnemonic (shelley)
@@ -211,3 +215,4 @@ const genMnemonic = () => {
 start();
 
 //testnet SEND BACK | addr_test1qqr585tvlc7ylnqvz8pyqwauzrdu0mxag3m7q56grgmgu7sxu2hyfhlkwuxupa9d5085eunq2qywy7hvmvej456flknswgndm3
+//shelley-michael | muffin shaft fatal nice tiger army whale scare blush arrest sleep potato crawl join version jar prevent antenna six convince manual eyebrow illness enhance

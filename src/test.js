@@ -1,8 +1,3 @@
-const {
-    Config,
-    Seed,
-    WalletServer,
-    AddressWallet,
-  } = require("cardano-wallet-js");
+const { Config } = require("cardano-wallet-js");
 
-  console.log(Config.Testnet);
+console.log(Config.Testnet);
