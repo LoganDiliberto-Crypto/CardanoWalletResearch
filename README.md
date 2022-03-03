@@ -34,6 +34,11 @@ Wallet Server is ran under localhost at port 8081 by default.
     - 64 bytes: extended ed25519 secret key composed of:
         - 32 bytes: Ed25519 curve scalar with bit manipulation according to ED25519-BIP32: (https://github.com/input-output-hk/adrestia/raw/bdf00e4e7791d610d273d227be877bc6dd0dbcfb/user-guide/static/Ed25519_BIP.pdf).
         - 32 bytes: Ed25519 binary blob (nonce) for signing. 
-    - 32 bytes: chain code for allowing child key derivation
+    - 32 bytes: chain code for allowing child key derivation.
+4. In cardano-serialization-lib, instead of `rootKey` as the traditional 96-byte xpriv, it is encoded in a different format of 128 bytes. This is because of software incapababilities. Some softwares may not know how to compute a public key from a private key.
+5. Instead of *privateKey | chaincode*, the new format is encoded in the following format: *privateKey | publicKey | chaincode*
+
+
+
 
 
