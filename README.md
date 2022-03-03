@@ -32,7 +32,7 @@ Wallet Server is ran under localhost at port 8081 by default.
 2. The PBKDF-2 function stretches the combination of the seed and password to 96 bytes through 4096 rounds of HMAC-SHA512 hashing.
 3. The resulting 96 bytes are composed of:
     - 64 bytes: extended ed25519 secret key composed of:
-        - 32 bytes: Ed25519 curve scalar with bit manipulation according to ED25519-BIP32: (https://github.com/input-output- hk/adrestia/raw/bdf00e4e7791d610d273d227be877bc6dd0dbcfb/user-guide/static/Ed25519_BIP.pdf).
+        - 32 bytes: Ed25519 curve scalar with bit manipulation according to ED25519-BIP32: (https://github.com/input-output-hk/adrestia/raw/bdf00e4e7791d610d273d227be877bc6dd0dbcfb/user-guide/static/Ed25519_BIP.pdf).
         - 32 bytes: Ed25519 binary blob (nonce) for signing. 
     - 32 bytes: chain code for allowing child key derivation
 
