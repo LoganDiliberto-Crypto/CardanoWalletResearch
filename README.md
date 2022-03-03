@@ -1,7 +1,9 @@
 # super-enigma
 
-`node src/index.js`
+## running node-wallets-server
 
-Shows user addresses on current walletServer, prompts to make or restore existing wallet, and make transactions.
+`node src/wallet-store/wallet-node.js`
+
+Shows user wallets on current walletServer, prompts to make or restore existing wallet, and make transactions.
 
 Wallet Server is ran under localhost at port 8081 by default.
