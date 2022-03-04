@@ -5,6 +5,7 @@
   "type": "module",
   "license": "MIT",
   "dependencies": {
+    "@blockfrost/blockfrost-js": "^4.0.1",
     "@emurgo/cardano-serialization-lib-nodejs": "^10.0.4",
     "bignumber": "^1.1.0",
     "bip32": "^3.0.1",
