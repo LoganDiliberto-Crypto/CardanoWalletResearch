@@ -91,7 +91,7 @@ const baseAddr = cardanolib.BaseAddress.new(
   );
 ```
 
-1. Combining the two parts of the address, the following function takes 3 parameters (network id, and the two required stake credentials) and returns an address encoded with Bech32.
+1. Combining the two parts of the address, the following function takes 3 parameters (network id, and the two required payment and stake credentials) and returns an address encoded with Bech32.
 2. Encoded address is led with a human-readable prefix of addr_test. Representing an address on the testnet.
 
 The following address represents the first account index specified earlier in the derivation path.
