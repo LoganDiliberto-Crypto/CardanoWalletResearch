@@ -21,6 +21,10 @@ const start = () => {
   const mnemonic =
     "muffin shaft fatal nice tiger army whale scare blush arrest sleep potato crawl join version jar prevent antenna six convince manual eyebrow illness enhance";
 
+    for (let i = 0; i < 20; i++) {
+        console.log(i);
+    }
+
   const seed = bip39.mnemonicToEntropy(mnemonic);
 
   const rootKey = cardanolib.Bip32PrivateKey.from_bip39_entropy(
