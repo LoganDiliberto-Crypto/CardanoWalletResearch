@@ -12,14 +12,26 @@ import readline from "readline";
 import readlinesync from "readline-sync";
 import assert from "assert";
 
+import { checkUtxos, checkTransactions } from "../utils.js";
+
+import blockfrost from "@blockfrost/blockfrost-js";
+
+import { lovelaceToAda } from "../utils.js";
+
+const blockfrost_api_key = "testnetBQXjqOI1c5DLckWEPsKddc062taGEjD2";
+
+const blockfrost_api = new blockfrost.BlockFrostAPI({
+  projectId: blockfrost_api_key,
+});
+
 const harden = (num) => {
   return 0x80000000 + num;
 };
 
-const start = () => {
+const start = async () => {
   //const mnemonic = bip39.generateMnemonic();
   const mnemonic =
-    "muffin shaft fatal nice tiger army whale scare blush arrest sleep potato crawl join version jar prevent antenna six convince manual eyebrow illness enhance";
+    "";
 
   const seed = bip39.mnemonicToEntropy(mnemonic);
 
@@ -27,6 +39,8 @@ const start = () => {
     Buffer.from(seed, "hex"),
     Buffer.from("")
   );
+
+  let total = 0;
 
   for (let i = 0; i < 20; i++) {
     const accountKey = rootKey
@@ -41,7 +55,7 @@ const start = () => {
 
     const stakeKey = accountKey
       .derive(2) // chimeric
-      .derive(i)
+      .derive(0)
       .to_public();
 
     const baseAddr = cardanolib.BaseAddress.new(
@@ -52,7 +66,17 @@ const start = () => {
 
     const address = baseAddr.to_address().to_bech32();
     console.log("Address", i+1 + ":", address);
+
+    // const address_utxo = await blockfrost_api.addressesUtxos(address);
+
+    // console.log(
+    //   "Current address amount:",
+    //   lovelaceToAda(address_utxo[0].amount[0].quantity)
+    // );
+
+    // total += lovelaceToAda(address_utxo[0].amount[0].quantity);
   }
+  // console.log("Wallet Total:", total);
 };
 
 start();
