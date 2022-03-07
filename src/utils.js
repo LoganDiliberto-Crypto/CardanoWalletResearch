@@ -2,7 +2,7 @@ import bip39 from "bip39";
 import blockfrost from '@blockfrost/blockfrost-js';
 
 
-const blockfrost_api_key = "testnetBQXjqOI1c5DLckWEPsKddc062taGEjD2";
+const blockfrost_api_key = "";
 
 const blockfrost_api = new blockfrost.BlockFrostAPI({
   projectId: blockfrost_api_key
