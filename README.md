@@ -85,6 +85,8 @@ const stakeKey = accountKey
 3. Although not defined here, the internal chain (change) is accessible under role value `1`.
 4. `stakeKey` defines the Staking Key as role value `2`.
 
+It is strongly recommended that wallets only use address_index=0 for the Stake Key to be compatible with existing software. This also avoids the need for staking key discovery.
+
 At the byte level, an address is compromised of two parts, the header and payload. The header is 1 byte, composed of address type and network tag, and payload is a variable length of bytes. Depending on the header given, the payload can vary. In our case that payload is composed of payment and delegation.
 
 ```
