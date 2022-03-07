@@ -54,6 +54,9 @@ Described by CIP 1852, BIP44-Ed25519 extends the previous BIP44 by adding new ch
 
 Specified as: `m / purpose' / coin_type' / account' / role / index`
 
+In contrast to BIP44, `change` has been replaced with `role`. 
+`role` can support the value `2` representing the staking key chain.
+
 ```
 const accountKey = rootKey
     .derive(harden(1852)) // purpose
@@ -79,7 +82,8 @@ const stakeKey = accountKey
 
 1. Extend current account key path by identifying the `role` and `index`. Address generation requires both payment and delegation (external chain and staking key, respectively), so that when generated, indicates ownership of funds and the owner of stake rights associated with that address. (Staking Key is also known as the "Reward Address".)
 2. `utxoPubKey` defines the External chain as role value `0`.
-3. `stakeKey` defines the Staking Key as role value `2`.
+3. Although not defined here, the internal chain (change) is accessible under role value `1`.
+4. `stakeKey` defines the Staking Key as role value `2`.
 
 At the byte level, an address is compromised of two parts, the header and payload. The header is 1 byte, composed of address type and network tag, and payload is a variable length of bytes. Depending on the header given, the payload can vary. In our case that payload is composed of payment and delegation.
 
