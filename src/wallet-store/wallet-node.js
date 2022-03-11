@@ -5,14 +5,14 @@ import readline from "readline";
 import readlinesync from "readline-sync";
 import assert from "assert";
 
-import { lovelaceToAda, genMnemonic } from "../gen-util.js";
+import { lovelaceToAda, genMnemonic } from "../utils.js";
 
 import {
   createOrRestoreWallet,
   checkWalletStatus,
   sendExternalTransaction,
   sendTransaction,
-} from "./utils.js";
+} from "./node-utils.js";
 
 const walletServer = WalletServer.init("http://localhost:8081/v2");
 
