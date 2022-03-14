@@ -27,6 +27,7 @@ import {
   getBalance,
   checkAddress,
   getTransactions,
+  submitTx,
 } from "../utils.js";
 
 const blockfrost_api_key = "testnetBQXjqOI1c5DLckWEPsKddc062taGEjD2";
@@ -156,6 +157,7 @@ const getWallet = async () => {
 };
 
 const start = async () => {
+
   const wallet = await getWallet();
 
   //Fees are constructed around two constants (a and b). The formula for calculating minimal fees for a transaction (tx) is a * size(tx) + b
@@ -172,7 +174,7 @@ const start = async () => {
   const payment_address =
     "addr_test1qqr585tvlc7ylnqvz8pyqwauzrdu0mxag3m7q56grgmgu7sxu2hyfhlkwuxupa9d5085eunq2qywy7hvmvej456flknswgndm3";
 
-  const value = adaToLovelace(10);
+  const value = adaToLovelace(5);
   try {
     const txBuilder = cardanolib.TransactionBuilder.new(
       cardanolib.TransactionBuilderConfigBuilder.new()
@@ -226,7 +228,7 @@ const start = async () => {
 
     //NO METADATA
 
-    await txBuilder.set_ttl(410021);
+    await txBuilder.set_ttl(52858914);
 
     console.log("change being set");
     await txBuilder.add_change_if_needed(
@@ -239,15 +241,16 @@ const start = async () => {
 
     const witnesses = await cardanolib.TransactionWitnessSet.new();
     const vkeyWitnesses = await cardanolib.Vkeywitnesses.new();
+    
 
-    signers.forEach(async (signer) => {
-      let vkeyWitness = await cardanolib.make_vkey_witness(
+    signers.forEach( (signer) => {
+      let vkeyWitness = cardanolib.make_vkey_witness(
         txHash,
         signer.to_raw_key()
       );
-      await vkeyWitnesses.add(vkeyWitness);
+      vkeyWitnesses.add(vkeyWitness);
     });
-    await witnesses.set_vkeys(vkeyWitnesses);
+    witnesses.set_vkeys(vkeyWitnesses);
 
     const signed_transaction = await cardanolib.Transaction.new(
       newTx.body(),
@@ -259,6 +262,9 @@ const start = async () => {
     const txHex = await Buffer.from(signed_transaction.to_bytes()).toString(
       "hex"
     );
+
+    console.log(await submitTx(txHex));
+
     console.log(txHex);
   } catch (error) {
     console.log(error);

@@ -26,6 +26,12 @@ export const genMnemonic = () => {
 /////////////////////////////////////////////////////////////
 
 //blockfrost Functions
+
+export const submitTx = async (tx) =>{
+  let tx_submission = await blockfrost_api.txSubmit(tx);
+  return tx_submission;
+}
+
 export const checkUtxos = async (addr) => {
   let utxos = await blockfrost_api.addressesUtxos(addr);
   return utxos;
