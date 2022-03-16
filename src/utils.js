@@ -23,9 +23,18 @@ export const genMnemonic = () => {
   return recoveryPhrase;
 };
 
+//harden derivation path values
+export const harden = (num) => {
+  return 0x80000000 + num;
+};
+
 /////////////////////////////////////////////////////////////
 
 //blockfrost Functions
+export const getBlockInfo = async()=>{
+  let latest = await blockfrost_api.blocksLatest();
+  return latest;
+}
 
 export const submitTx = async (tx) =>{
   let tx_submission = await blockfrost_api.txSubmit(tx);
@@ -38,8 +47,8 @@ export const checkUtxos = async (addr) => {
 };
 
 export const checkTransactions = async (addr) => {
-  let utxos = await blockfrost_api.addressesUtxos(addr);
-  return utxos;
+  let tx = await blockfrost_api.addressesTransactionsAll(addr);
+  return tx;
 };
 
 export const checkAddress = async (addr) => {
