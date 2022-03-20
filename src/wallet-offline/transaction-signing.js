@@ -1,15 +1,10 @@
-import wallet_data from "../../src/wallet-database/unsignedtx.json";
-import { harden } from "../utils.js";
+import wallet_data from "../../src/wallet-database/unsignedtx.json" assert {type: "json"};
+import { harden, submitTx } from "../utils.js";
 import bip39 from "bip39";
 import cardanolib from "@emurgo/cardano-serialization-lib-nodejs";
-import { decode, encode } from "cbor-x";
-import nacl from "tweetnacl";
-
-import {
-  submitTx,
-} from "../utils.js";
 
 var tx_cbor = wallet_data.tx;
+
 console.log("unsigned transaction as cbor:", tx_cbor);
 
 const unsigned_tx = cardanolib.Transaction.from_bytes(
@@ -56,7 +51,7 @@ console.log(
 const signed_transaction = await cardanolib.Transaction.new(
   unsigned_tx.body(),
   witnesses,
-  //no metadata -> undefined for now... note adding metadata increases fees to about 450?
+  //no metadata -> undefined for now... note adding metadata increases fees
   undefined
 );
 

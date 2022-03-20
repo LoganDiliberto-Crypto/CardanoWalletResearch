@@ -1,15 +1,14 @@
-import wallet_data from "../../src/wallet-database/utxos.json";
-import config from "../../extras/epoch_config.json";
+import wallet_data from "../../src/wallet-database/utxos.json" assert { type: "json" };
+import config from "../../extras/epoch_config.json" assert { type: "json" };
 import cardanolib from "@emurgo/cardano-serialization-lib-nodejs";
 import fs from "fs";
 import { lovelaceToAda, adaToLovelace, getBlockInfo } from "../utils.js";
-import { encode, decode } from "cborg";
-import * as ed from "@noble/ed25519";
 
 const start = async () => {
   const wallet = wallet_data.wallet_data[0];
   //Fees are constructed around two constants (a and b). The formula for calculating minimal fees for a transaction (tx) is a * size(tx) + b
   const simple_tx_fee = config.min_fee_a * 300 + config.min_fee_b;
+  console.log(simple_tx_fee);
 
   const block_info = await getBlockInfo();
 
@@ -26,7 +25,8 @@ const start = async () => {
   const payment_address =
     "addr_test1qqr585tvlc7ylnqvz8pyqwauzrdu0mxag3m7q56grgmgu7sxu2hyfhlkwuxupa9d5085eunq2qywy7hvmvej456flknswgndm3";
 
-  const value = adaToLovelace(5);
+  const value = adaToLovelace(2_000);
+  
   try {
     const txBuilder = cardanolib.TransactionBuilder.new(
       cardanolib.TransactionBuilderConfigBuilder.new()
@@ -53,7 +53,7 @@ const start = async () => {
       if (utxoValueSum >= value + simple_tx_fee) {
         return;
       }
-      utxoValueSum += utxo.input_value;
+      utxoValueSum += parseInt(utxo.input_value);
       txBuilder.add_input(
         cardanolib.Address.from_bech32(utxo.address),
         cardanolib.TransactionInput.new(
@@ -89,10 +89,8 @@ const start = async () => {
 
     console.log("\nBuilding Transaction");
     const newTx = await txBuilder.build_tx();
-
     console.log("\nBuilt.");
 
-    let bytes_unsigned = newTx.to_bytes();
     let cbor_unsigned = await Buffer.from(newTx.to_bytes()).toString("hex");
 
     const unsigned_tx_obj = {
@@ -102,17 +100,15 @@ const start = async () => {
 
     const txHash = await cardanolib.hash_transaction(newTx.body());
 
-    console.log(Buffer.from("Hash unsigned", txHash.to_bytes()).toString("hex"));
+    console.log(
+      Buffer.from("Hash unsigned", txHash.to_bytes()).toString("hex")
+    );
     const txBodyHex = await Buffer.from(newTx.body().to_bytes()).toString(
       "hex"
     );
     console.log("CBOR BODY unsigned:", txBodyHex);
 
-    // console.log("\nBYTES unsigned:", bytes_unsigned);
-
     console.log("\nCBOR unsigned:", cbor_unsigned);
-
-
 
     fs.writeFile(
       "./src/wallet-database/unsignedtx.json",

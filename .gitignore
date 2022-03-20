@@ -1,1 +1,7 @@
 *.txt
+
+/src/wallet-database/unsignedtx.json
+/src/wallet-database/utxos.json
+
+./src/wallet-database/unsignedtx.json
+./src/wallet-database/utxos.json
