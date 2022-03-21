@@ -149,7 +149,6 @@ const getWallet = async () => {
     const transactions = await getTransactions(change_address);
 
     if (transactions.length == 0 && is_change) {
-      console.log("found change!");
       unused_change.push(change_address);
     } else {
       index++;
