@@ -5,7 +5,7 @@ import cardanolib from "@emurgo/cardano-serialization-lib-nodejs";
 
 var tx_cbor = wallet_data.tx;
 
-console.log("unsigned transaction as cbor:", tx_cbor);
+console.log("\nCBOR unsigned:", tx_cbor);
 
 const unsigned_tx = cardanolib.Transaction.from_bytes(
   Buffer.from(tx_cbor, "hex")
@@ -43,11 +43,6 @@ signers.forEach((signer) => {
 });
 witnesses.set_vkeys(vkeyWitnesses);
 
-console.log(
-  "CBOR unsigned:",
-  await Buffer.from(unsigned_tx.to_bytes()).toString("hex")
-);
-
 const signed_transaction = await cardanolib.Transaction.new(
   unsigned_tx.body(),
   witnesses,
@@ -59,7 +54,7 @@ const signed_transaction_cbor = await Buffer.from(
   signed_transaction.to_bytes()
 ).toString("hex");
 
-console.log("CBOR signed tx:", signed_transaction_cbor);
+console.log("\nCBOR signed tx:", signed_transaction_cbor);
 
 // console.log(
 //   "View in Cardanoscan: https://testnet.cardanoscan.io/transaction/" +

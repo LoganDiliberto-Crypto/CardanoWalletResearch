@@ -23,6 +23,10 @@ export const genMnemonic = () => {
   return recoveryPhrase;
 };
 
+export const getChangeAddress = async() =>{
+  
+}
+
 //harden derivation path values
 export const harden = (num) => {
   return 0x80000000 + num;

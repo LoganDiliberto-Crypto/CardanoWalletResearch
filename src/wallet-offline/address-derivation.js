@@ -90,6 +90,7 @@ const getWallet = async () => {
     }
 
     if (transactions.length == 0 && is_change) {
+      console.log("found change!");
       unused_change.push(address);
       address_count++;
     }
@@ -121,7 +122,39 @@ const getWallet = async () => {
     is_change = !is_change;
   }
 
-  // console.log(unspent_transactions);
+  while (unused_change.length == 0) {
+    const accountKey = rootKey
+      .derive(harden(1852)) // purpose
+      .derive(harden(1815)) // coin type
+      .derive(harden(0));
+
+    const changeKey = accountKey
+      .derive(1) // internal
+      .derive(index)
+      .to_public();
+
+    const stakeKey = accountKey
+      .derive(2) // chimeric
+      .derive(0)
+      .to_public();
+
+    const addr_decoded = cardanolib.BaseAddress.new(
+      cardanolib.NetworkInfo.testnet().network_id(),
+      cardanolib.StakeCredential.from_keyhash(changeKey.to_raw_key().hash()),
+      cardanolib.StakeCredential.from_keyhash(stakeKey.to_raw_key().hash())
+    );
+
+    const change_address = addr_decoded.to_address().to_bech32();
+
+    const transactions = await getTransactions(change_address);
+
+    if (transactions.length == 0 && is_change) {
+      console.log("found change!");
+      unused_change.push(change_address);
+    } else {
+      index++;
+    }
+  }
 
   unspent_transactions.forEach((utxo) => {
     balance += parseInt(utxo.input_value);
@@ -144,7 +177,7 @@ const getWallet = async () => {
     return;
   });
 
-  console.log("Sent to [./src/wallet-database/utxos.json]")
+  console.log("Sent to [./src/wallet-database/utxos.json]");
 };
 
 getWallet();

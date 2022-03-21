@@ -8,7 +8,6 @@ const start = async () => {
   const wallet = wallet_data.wallet_data[0];
   //Fees are constructed around two constants (a and b). The formula for calculating minimal fees for a transaction (tx) is a * size(tx) + b
   const simple_tx_fee = config.min_fee_a * 300 + config.min_fee_b;
-  console.log(simple_tx_fee);
 
   const block_info = await getBlockInfo();
 
@@ -25,7 +24,7 @@ const start = async () => {
   const payment_address =
     "addr_test1qqr585tvlc7ylnqvz8pyqwauzrdu0mxag3m7q56grgmgu7sxu2hyfhlkwuxupa9d5085eunq2qywy7hvmvej456flknswgndm3";
 
-  const value = adaToLovelace(2_000);
+  const value = adaToLovelace(20);
   
   try {
     const txBuilder = cardanolib.TransactionBuilder.new(
@@ -100,13 +99,11 @@ const start = async () => {
 
     const txHash = await cardanolib.hash_transaction(newTx.body());
 
-    console.log(
-      Buffer.from("Hash unsigned", txHash.to_bytes()).toString("hex")
-    );
+    
     const txBodyHex = await Buffer.from(newTx.body().to_bytes()).toString(
       "hex"
     );
-    console.log("CBOR BODY unsigned:", txBodyHex);
+    console.log("\nCBOR BODY unsigned:", txBodyHex);
 
     console.log("\nCBOR unsigned:", cbor_unsigned);
 
