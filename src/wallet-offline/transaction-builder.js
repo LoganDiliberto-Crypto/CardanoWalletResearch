@@ -2,30 +2,25 @@ import wallet_data from "../../src/wallet-database/utxos.json" assert { type: "j
 import config from "../../extras/epoch_config.json" assert { type: "json" };
 import cardanolib from "@emurgo/cardano-serialization-lib-nodejs";
 import fs from "fs";
-import { lovelaceToAda, adaToLovelace, getBlockInfo } from "../utils.js";
+import { adaToLovelace, getBlockInfo } from "../utils.js";
 
 const start = async () => {
+  //read utxos
   const wallet = wallet_data.wallet_data[0];
+
   //Fees are constructed around two constants (a and b). The formula for calculating minimal fees for a transaction (tx) is a * size(tx) + b
+  //Simple tx size is 300
   const simple_tx_fee = config.min_fee_a * 300 + config.min_fee_b;
 
+  //for ttl
   const block_info = await getBlockInfo();
-
   const slot_num = block_info.slot;
 
-  console.log("\nNew address:", wallet.unused);
-  console.log(
-    "Balance in lovelace:",
-    wallet.balance,
-    "| in ADA:",
-    lovelaceToAda(wallet.balance)
-  );
-
+  //define transaction recipient and value
   const payment_address =
     "addr_test1qqr585tvlc7ylnqvz8pyqwauzrdu0mxag3m7q56grgmgu7sxu2hyfhlkwuxupa9d5085eunq2qywy7hvmvej456flknswgndm3";
-
   const value = adaToLovelace(20);
-  
+
   try {
     const txBuilder = cardanolib.TransactionBuilder.new(
       cardanolib.TransactionBuilderConfigBuilder.new()
@@ -45,9 +40,10 @@ const start = async () => {
         .prefer_pure_change(true)
         .build()
     );
+
     let paths = [];
-    let utxoValueSum = 0,
-      signers = [];
+    let utxoValueSum = 0;
+    // signers = [];
     wallet.utxos.forEach((utxo) => {
       if (utxoValueSum >= value + simple_tx_fee) {
         return;
@@ -64,7 +60,7 @@ const start = async () => {
         cardanolib.Value.new(cardanolib.BigNum.from_str(utxo.input_value))
       );
       paths.push(utxo.path);
-      signers.push(utxo.child); // track which addresses' utxos are being used
+      // signers.push(utxo.child); // track which addresses' utxos are being used
     });
 
     txBuilder.add_output(
@@ -78,7 +74,6 @@ const start = async () => {
     );
 
     //time to live
-
     await txBuilder.set_ttl(slot_num + 200);
 
     console.log("\nSetting Change");
@@ -97,13 +92,10 @@ const start = async () => {
       path: paths,
     };
 
-    const txHash = await cardanolib.hash_transaction(newTx.body());
+    await cardanolib.hash_transaction(newTx.body());
 
-    
-    const txBodyHex = await Buffer.from(newTx.body().to_bytes()).toString(
-      "hex"
-    );
-    console.log("\nCBOR BODY unsigned:", txBodyHex);
+    await Buffer.from(newTx.body().to_bytes()).toString("hex");
+    // console.log("\nCBOR BODY unsigned:", txBodyHex);
 
     console.log("\nCBOR unsigned:", cbor_unsigned);
 

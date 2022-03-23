@@ -22,7 +22,7 @@
     "tweetnacl": "^1.0.3"
   },
   "scripts": {
-    "start": "node  ./src/wallet-offline/address-derivation.js",
+    "start": "node  --experimental-json-modules ./src/wallet-offline/address-derivation.js",
     "txbuild": "node --experimental-json-modules ./src/wallet-offline/transaction-builder.js",
     "txsign": "node --experimental-json-modules ./src/wallet-offline/transaction-signing.js"
   }

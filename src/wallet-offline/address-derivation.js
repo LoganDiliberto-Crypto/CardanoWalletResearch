@@ -1,36 +1,30 @@
 import bip39 from "bip39";
 import cardanolib from "@emurgo/cardano-serialization-lib-nodejs";
 
-import blockfrost from "@blockfrost/blockfrost-js";
+import key from "../../src/wallet-database/pubkey.json" assert { type: "json" };
+
+// import blockfrost from "@blockfrost/blockfrost-js";
 
 import fs from "fs";
 
-import {
-  lovelaceToAda,
-  adaToLovelace,
-  getUtxos,
-  getTransactions,
-  submitTx,
-  harden,
-} from "../utils.js";
+import { lovelaceToAda, getUtxos, getTransactions, harden } from "../utils.js";
 
-const blockfrost_api_key = "testnetBQXjqOI1c5DLckWEPsKddc062taGEjD2";
+//blockfrost api
+// const blockfrost_api_key = "testnetBQXjqOI1c5DLckWEPsKddc062taGEjD2";
 
-const blockfrost_api = new blockfrost.BlockFrostAPI({
-  projectId: blockfrost_api_key,
-});
+// const blockfrost_api = new blockfrost.BlockFrostAPI({
+//   projectId: blockfrost_api_key,
+// });
 
 const getWallet = async () => {
   //const mnemonic = bip39.generateMnemonic();
-  const mnemonic =
-    "muffin shaft fatal nice tiger army whale scare blush arrest sleep potato crawl join version jar prevent antenna six convince manual eyebrow illness enhance";
+  // const mnemonic =
+  //   "muffin shaft fatal nice tiger army whale scare blush arrest sleep potato crawl join version jar prevent antenna six convince manual eyebrow illness enhance";
 
-  const seed = bip39.mnemonicToEntropy(mnemonic);
+  console.log(key.xpub);
+  // const seed = bip39.mnemonicToEntropy(mnemonic);
 
-  const rootKey = cardanolib.Bip32PrivateKey.from_bip39_entropy(
-    Buffer.from(seed, "hex"),
-    Buffer.from("")
-  );
+  const rootKey = await cardanolib.Bip32PublicKey.from_bech32(key.xpub);
 
   let balance = 0;
   let unused = [];
@@ -46,24 +40,24 @@ const getWallet = async () => {
     let role = is_change ? 1 : 0;
 
     const accountKey = rootKey
-      .derive(harden(1852)) // purpose
-      .derive(harden(1815)) // coin type
-      .derive(harden(0));
+      .derive(hardened(1852)) // purpose
+      .derive(1815) // coin type
+      .derive(0);
 
+    // todo | request xpub from above derivation path... -> m/1852'/1815'/0'
+
+    // xpub/role/index
     const utxoPubKey = accountKey
       .derive(role) // external
-      .derive(index)
-      .to_public();
+      .derive(index);
 
     const changeKey = accountKey
       .derive(role) // internal
-      .derive(index)
-      .to_public();
+      .derive(index);
 
     const stakeKey = accountKey
       .derive(2) // chimeric
-      .derive(0)
-      .to_public();
+      .derive(0);
 
     let stake_credential = is_change
       ? changeKey.to_raw_key().hash()
@@ -90,7 +84,6 @@ const getWallet = async () => {
     }
 
     if (transactions.length == 0 && is_change) {
-      console.log("found change!");
       unused_change.push(address);
       address_count++;
     }
@@ -103,7 +96,7 @@ const getWallet = async () => {
       continue;
     }
 
-    const utxos = await getUtxos(address);
+    const utxos = getUtxos(address);
 
     let path_info = { role: role, index: index };
 
@@ -176,7 +169,15 @@ const getWallet = async () => {
     return;
   });
 
-  console.log("Sent to [./src/wallet-database/utxos.json]");
+  console.log("\nNew address:", unused[0]);
+  console.log(
+    "Balance in lovelace:",
+    balance,
+    "| in ADA:",
+    lovelaceToAda(balance)
+  );
+
+  console.log("\nSent to [./src/wallet-database/utxos.json]");
 };
 
 getWallet();

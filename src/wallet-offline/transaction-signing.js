@@ -57,6 +57,6 @@ const signed_transaction_cbor = await Buffer.from(
 console.log("\nCBOR signed tx:", signed_transaction_cbor);
 
 // console.log(
-//   "View in Cardanoscan: https://testnet.cardanoscan.io/transaction/" +
+//   "\nView in Cardanoscan: https://testnet.cardanoscan.io/transaction/" +
 //     (await submitTx(signed_transaction_cbor))
 // );
