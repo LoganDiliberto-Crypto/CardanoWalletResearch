@@ -76,7 +76,7 @@ const start = async () => {
     //time to live
     await txBuilder.set_ttl(slot_num + 200);
 
-    console.log("\nSetting Change");
+    // console.log("\nSetting Change");
     await txBuilder.add_change_if_needed(
       cardanolib.Address.from_bech32(wallet.change)
     );
