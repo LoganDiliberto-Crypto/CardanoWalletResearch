@@ -24,7 +24,7 @@ const getWallet = async () => {
   console.log(key.xpub);
   // const seed = bip39.mnemonicToEntropy(mnemonic);
 
-  const rootKey = await cardanolib.Bip32PublicKey.from_bech32(key.xpub);
+  const accountKey = await cardanolib.Bip32PublicKey.from_bech32(key.xpub);
 
   let balance = 0;
   let unused = [];
@@ -38,13 +38,9 @@ const getWallet = async () => {
 
   while (address_count < 20) {
     let role = is_change ? 1 : 0;
-
-    const accountKey = rootKey
-      .derive(hardened(1852)) // purpose
-      .derive(1815) // coin type
-      .derive(0);
-
     // todo | request xpub from above derivation path... -> m/1852'/1815'/0'
+    // as of now public key can only deriv softened addresses
+
 
     // xpub/role/index
     const utxoPubKey = accountKey
@@ -96,7 +92,7 @@ const getWallet = async () => {
       continue;
     }
 
-    const utxos = getUtxos(address);
+    const utxos = await getUtxos(address);
 
     let path_info = { role: role, index: index };
 
@@ -116,20 +112,13 @@ const getWallet = async () => {
   }
 
   while (unused_change.length == 0) {
-    const accountKey = rootKey
-      .derive(harden(1852)) // purpose
-      .derive(harden(1815)) // coin type
-      .derive(harden(0));
-
     const changeKey = accountKey
       .derive(1) // internal
       .derive(index)
-      .to_public();
 
     const stakeKey = accountKey
       .derive(2) // chimeric
       .derive(0)
-      .to_public();
 
     const addr_decoded = cardanolib.BaseAddress.new(
       cardanolib.NetworkInfo.testnet().network_id(),
