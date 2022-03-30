@@ -22,8 +22,9 @@
     "tweetnacl": "^1.0.3"
   },
   "scripts": {
-    "start": "node  --experimental-json-modules ./src/wallet-offline/address-derivation.js",
-    "txbuild": "node --experimental-json-modules ./src/wallet-offline/transaction-builder.js",
-    "txsign": "node --experimental-json-modules ./src/wallet-offline/transaction-signing.js"
+    "create": "node ./src/wallet-offline/wallet-creation.js",
+    "build": "node --experimental-json-modules ./src/wallet-offline/transaction-builder.js",
+    "sign": "node --experimental-json-modules ./src/wallet-offline/transaction-signing.js",
+    "submit": "node --experimental-json-modules ./src/wallet-offline/transaction-submit.js"
   }
 }

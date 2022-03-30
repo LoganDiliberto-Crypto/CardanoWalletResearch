@@ -1,15 +1,168 @@
-import wallet_data from "../../src/wallet-database/utxos.json" assert { type: "json" };
+import key from "../wallet-database/pubkey.json" assert { type: "json" };
+
 import config from "../../extras/epoch_config.json" assert { type: "json" };
 import cardanolib from "@emurgo/cardano-serialization-lib-nodejs";
 import fs from "fs";
-import { adaToLovelace, getBlockInfo } from "../utils.js";
 
-const start = async () => {
-  //read utxos
-  const wallet = wallet_data.wallet_data[0];
+import {
+  lovelaceToAda,
+  getUtxos,
+  getTransactions,
+  adaToLovelace,
+  getBlockInfo,
+} from "../utils.js";
 
-  //Fees are constructed around two constants (a and b). The formula for calculating minimal fees for a transaction (tx) is a * size(tx) + b
-  //Simple tx size is 300
+
+const getWallet = async () => {
+  const accountKey = await cardanolib.Bip32PublicKey.from_bech32(key.xpub);
+
+  let balance = 0;
+  let unused = [];
+  let unused_change = [];
+  let address_count = 0;
+  let index = 0;
+  let is_change = false;
+  let unspent_transactions = [];
+
+  console.log("Deriving Addresses...");
+
+  while (address_count < 20) {
+    let role = is_change ? 1 : 0;
+
+    // xpub/role/index
+    const utxoPubKey = accountKey
+      .derive(role) // external
+      .derive(index);
+
+    const changeKey = accountKey
+      .derive(role) // internal
+      .derive(index);
+
+    const stakeKey = accountKey
+      .derive(2) // chimeric
+      .derive(0);
+
+    let stake_credential = is_change
+      ? changeKey.to_raw_key().hash()
+      : utxoPubKey.to_raw_key().hash();
+
+    const addr_decoded = cardanolib.BaseAddress.new(
+      cardanolib.NetworkInfo.testnet().network_id(),
+      cardanolib.StakeCredential.from_keyhash(stake_credential),
+      cardanolib.StakeCredential.from_keyhash(stakeKey.to_raw_key().hash())
+    );
+
+    const address = addr_decoded.to_address().to_bech32();
+
+    const transactions = await getTransactions(address);
+
+    //reset gap if transaction is found..
+    if (transactions.length > 0 && !is_change) {
+      address_count = 0;
+    }
+
+    if (transactions.length == 0 && !is_change) {
+      unused.push(address);
+      address_count++;
+    }
+
+    if (transactions.length == 0 && is_change) {
+      unused_change.push(address);
+      address_count++;
+    }
+
+    if (transactions.length == 0) {
+      if (is_change) {
+        index++;
+      }
+      is_change = !is_change;
+      continue;
+    }
+
+    const utxos = await getUtxos(address);
+
+    let path_info = { role: role, index: index };
+
+    await utxos.forEach(async (utxo) => {
+      unspent_transactions.push({
+        address: address,
+        path: path_info,
+        tx_hash: utxo.tx_hash,
+        tx_index: utxo.tx_index,
+        input_value: utxo.amount[0].quantity,
+      });
+    });
+    if (is_change) {
+      index++;
+    }
+    is_change = !is_change;
+  }
+
+  while (unused_change.length == 0) {
+    const changeKey = accountKey
+      .derive(1) // internal
+      .derive(index);
+
+    const stakeKey = accountKey
+      .derive(2) // chimeric
+      .derive(0);
+
+    const addr_decoded = cardanolib.BaseAddress.new(
+      cardanolib.NetworkInfo.testnet().network_id(),
+      cardanolib.StakeCredential.from_keyhash(changeKey.to_raw_key().hash()),
+      cardanolib.StakeCredential.from_keyhash(stakeKey.to_raw_key().hash())
+    );
+
+    const change_address = addr_decoded.to_address().to_bech32();
+
+    const transactions = await getTransactions(change_address);
+
+    if (transactions.length == 0 && is_change) {
+      unused_change.push(change_address);
+    } else {
+      index++;
+    }
+  }
+
+  unspent_transactions.forEach((utxo) => {
+    balance += parseInt(utxo.input_value);
+  });
+
+  let wallet_db = {
+    wallet_data: [],
+  };
+
+  let data = {
+    utxos: unspent_transactions,
+    unused: unused[0],
+    balance: balance,
+    change: unused_change[0],
+  };
+
+  wallet_db.wallet_data.push(data);
+
+  const wallet_json = JSON.stringify(wallet_db);
+
+  fs.writeFile("./src/wallet-database/utxos.json", wallet_json, "utf8", () => {
+    return;
+  });
+
+  console.log("\nNew address:", unused[0]);
+  console.log(
+    "Balance in lovelace:",
+    balance,
+    "| in ADA:",
+    lovelaceToAda(balance)
+  );
+
+  console.log("\nUTXOs sent to [./src/wallet-database/utxos.json]");
+
+  return data;
+};
+
+const buildTransaction = async () => {
+  const wallet_data = await getWallet();
+
   const simple_tx_fee = config.min_fee_a * 300 + config.min_fee_b;
 
   //for ttl
@@ -44,7 +197,7 @@ const start = async () => {
     let paths = [];
     let utxoValueSum = 0;
     // signers = [];
-    wallet.utxos.forEach((utxo) => {
+    wallet_data.utxos.forEach((utxo) => {
       if (utxoValueSum >= value + simple_tx_fee) {
         return;
       }
@@ -74,11 +227,11 @@ const start = async () => {
     );
 
     //time to live
-    await txBuilder.set_ttl(slot_num + 200);
+    await txBuilder.set_ttl(slot_num + 300);
 
     // console.log("\nSetting Change");
     await txBuilder.add_change_if_needed(
-      cardanolib.Address.from_bech32(wallet.change)
+      cardanolib.Address.from_bech32(wallet_data.change)
     );
 
     console.log("\nBuilding Transaction");
@@ -111,4 +264,4 @@ const start = async () => {
   }
 };
 
-start();
+buildTransaction();

@@ -1,5 +1,6 @@
 import wallet_data from "../../src/wallet-database/unsignedtx.json" assert {type: "json"};
-import { harden, submitTx } from "../utils.js";
+import { harden } from "../utils.js";
+import fs from "fs";
 import bip39 from "bip39";
 import cardanolib from "@emurgo/cardano-serialization-lib-nodejs";
 
@@ -56,7 +57,13 @@ const signed_transaction_cbor = await Buffer.from(
 
 console.log("\nCBOR signed tx:", signed_transaction_cbor);
 
-// console.log(
-//   "\nView in Cardanoscan: https://testnet.cardanoscan.io/transaction/" +
-//     (await submitTx(signed_transaction_cbor))
-// );
+const signed_tx = {tx: signed_transaction_cbor};
+
+fs.writeFile(
+  "./src/wallet-database/signedtx.json",
+  JSON.stringify(signed_tx),
+  "utf8",
+  () => {}
+);
+
+console.log("\nSigned TX sent to: [./src/wallet-database/signedtx.json]");
