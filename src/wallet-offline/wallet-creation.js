@@ -7,7 +7,7 @@ import { harden } from "../utils.js";
 
 const createWallet = async () => {
   const mnemonic =
-    "muffin shaft fatal nice tiger army whale scare blush arrest sleep potato crawl join version jar prevent antenna six convince manual eyebrow illness enhance";
+    "copy vast such slogan life educate meat bitter bus grief survey trip reopen scrap north swing write arm celery exit quit fork vintage praise";
 
   const seed = bip39.mnemonicToEntropy(mnemonic);
 
@@ -19,7 +19,7 @@ const createWallet = async () => {
   const accountKey = rootKey
       .derive(harden(1852)) // purpose
       .derive(harden(1815)) // coin type
-      .derive(harden(0));
+      .derive(harden(0)); //account
 
   const xpub = {xpub: accountKey.to_public().to_bech32()};
 

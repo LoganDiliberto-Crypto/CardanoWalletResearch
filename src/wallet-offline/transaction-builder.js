@@ -10,10 +10,12 @@ import {
   getTransactions,
   adaToLovelace,
   getBlockInfo,
+  writeRecords,
 } from "../utils.js";
 
 
 const getWallet = async () => {
+  console.log(key.xpub);
   const accountKey = await cardanolib.Bip32PublicKey.from_bech32(key.xpub);
 
   let balance = 0;
@@ -42,13 +44,14 @@ const getWallet = async () => {
       .derive(2) // chimeric
       .derive(0);
 
+      //Sets stake_credential to either changeKey or utxoPubKey based on is_change
     let stake_credential = is_change
-      ? changeKey.to_raw_key().hash()
-      : utxoPubKey.to_raw_key().hash();
+      ? changeKey.to_raw_key()
+      : utxoPubKey.to_raw_key();
 
     const addr_decoded = cardanolib.BaseAddress.new(
       cardanolib.NetworkInfo.testnet().network_id(),
-      cardanolib.StakeCredential.from_keyhash(stake_credential),
+      cardanolib.StakeCredential.from_keyhash(stake_credential.hash()),
       cardanolib.StakeCredential.from_keyhash(stakeKey.to_raw_key().hash())
     );
 
@@ -90,6 +93,7 @@ const getWallet = async () => {
         tx_hash: utxo.tx_hash,
         tx_index: utxo.tx_index,
         input_value: utxo.amount[0].quantity,
+        pubKey: stake_credential,
       });
     });
     if (is_change) {
@@ -171,9 +175,9 @@ const buildTransaction = async () => {
 
   //define transaction recipient and value
   const payment_address =
-    "addr_test1qqr585tvlc7ylnqvz8pyqwauzrdu0mxag3m7q56grgmgu7sxu2hyfhlkwuxupa9d5085eunq2qywy7hvmvej456flknswgndm3";
-  const value = adaToLovelace(20);
-
+    "addr_test1qplkumyny0yz6m2tdjv4wvh3j6fgnjk5zwug0md7695zcwzmapteuncnws5djp97s5p2he78ayxvmhuxvjlk4vz0rqcq2uck0v";
+  const value = adaToLovelace(400);
+  var signatureRequests = [];
   try {
     const txBuilder = cardanolib.TransactionBuilder.new(
       cardanolib.TransactionBuilderConfigBuilder.new()
@@ -196,12 +200,14 @@ const buildTransaction = async () => {
 
     let paths = [];
     let utxoValueSum = 0;
+    let pubKeys = [];
     // signers = [];
     wallet_data.utxos.forEach((utxo) => {
       if (utxoValueSum >= value + simple_tx_fee) {
         return;
       }
       utxoValueSum += parseInt(utxo.input_value);
+      
       txBuilder.add_input(
         cardanolib.Address.from_bech32(utxo.address),
         cardanolib.TransactionInput.new(
@@ -240,10 +246,19 @@ const buildTransaction = async () => {
 
     let cbor_unsigned = await Buffer.from(newTx.to_bytes()).toString("hex");
 
-    const unsigned_tx_obj = {
-      tx: cbor_unsigned,
-      path: paths,
-    };
+    const unsigned = cardanolib.Transaction.from_bytes(newTx.to_bytes())
+    const message = await cardanolib.hash_transaction(unsigned.body());
+    var x = Buffer.from(message.to_bytes()).toString("hex");
+
+    wallet_data.utxos.forEach((utxo) => {
+      var unsigned_tx_obj = {
+        message: x,
+        publicKey: utxo.pubKey.to_bech32(),
+        path: "m/1852'/1815'/0'/"+utxo.path.role+"/"+utxo.path.index,
+        curve: "ed25519",
+      };
+      signatureRequests.push(unsigned_tx_obj);
+    });
 
     await cardanolib.hash_transaction(newTx.body());
 
@@ -252,12 +267,13 @@ const buildTransaction = async () => {
 
     console.log("\nCBOR unsigned:", cbor_unsigned);
 
-    fs.writeFile(
-      "./src/wallet-database/unsignedtx.json",
-      JSON.stringify(unsigned_tx_obj),
-      "utf8",
-      () => {}
-    );
+    const request = { 
+      preImage: cbor_unsigned,
+      signatureRequests: signatureRequests
+    }
+
+    writeRecords(null, request);
+
   } catch (error) {
     console.log(error);
     return error;

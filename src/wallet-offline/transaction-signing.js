@@ -13,7 +13,7 @@ const unsigned_tx = cardanolib.Transaction.from_bytes(
 );
 
 const mnemonic =
-  "muffin shaft fatal nice tiger army whale scare blush arrest sleep potato crawl join version jar prevent antenna six convince manual eyebrow illness enhance";
+  "copy vast such slogan life educate meat bitter bus grief survey trip reopen scrap north swing write arm celery exit quit fork vintage praise";
 
 const seed = bip39.mnemonicToEntropy(mnemonic);
 
