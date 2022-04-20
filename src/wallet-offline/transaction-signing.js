@@ -32,6 +32,7 @@ const vkeyWitnesses = await cardanolib.Vkeywitnesses.new();
 const txHash = await cardanolib.hash_transaction(unsigned_tx.body());
 
 let signers = wallet_data.path;
+let signatures = [];
 
 signers.forEach((signer) => {
   const priv_key = accountKey
@@ -40,9 +41,14 @@ signers.forEach((signer) => {
     .to_raw_key();
 
   let vkeyWitness = cardanolib.make_vkey_witness(txHash, priv_key);
+  signatures.push(
+    console.log( Buffer.from(vkeyWitness.signature().to_bytes()).toString("hex"))
+  );
   vkeyWitnesses.add(vkeyWitness);
 });
 witnesses.set_vkeys(vkeyWitnesses);
+
+console.log("signatures:", signatures);
 
 const signed_transaction = await cardanolib.Transaction.new(
   unsigned_tx.body(),

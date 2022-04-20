@@ -7,7 +7,7 @@ import { harden } from "../utils.js";
 
 const createWallet = async () => {
   const mnemonic =
-    "copy vast such slogan life educate meat bitter bus grief survey trip reopen scrap north swing write arm celery exit quit fork vintage praise";
+    "muffin shaft fatal nice tiger army whale scare blush arrest sleep potato crawl join version jar prevent antenna six convince manual eyebrow illness enhance";
 
   const seed = bip39.mnemonicToEntropy(mnemonic);
 
