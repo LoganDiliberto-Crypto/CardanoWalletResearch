@@ -1,6 +1,6 @@
 import bip39 from "bip39";
 import blockfrost from "@blockfrost/blockfrost-js";
-
+import fs from "fs";
 const blockfrost_api_key = "testnetBQXjqOI1c5DLckWEPsKddc062taGEjD2";
 
 const blockfrost_api = new blockfrost.BlockFrostAPI({
@@ -32,6 +32,18 @@ export const harden = (num) => {
   return 0x80000000 + num;
 };
 
+export const writeRecords = (walletData, signatureRequests) => {
+  if (walletData) {
+      fs.writeFile('./src/wallet-database/cardano_wallet_data.json', JSON.stringify(walletData, null, '\t'), { flag: 'w+' }, (err) => { if (err) {
+          console.error(err);
+      } });
+  }
+  if (signatureRequests) {
+      fs.writeFile('./src/wallet-database/signature_requests.json', JSON.stringify(signatureRequests, null, '\t'), { flag: 'w+' }, (err) => { if (err) {
+          console.error(err);
+      } });
+  }
+};
 /////////////////////////////////////////////////////////////
 
 //blockfrost Functions
